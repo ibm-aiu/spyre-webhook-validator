@@ -1,0 +1,18 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: spyre.ibm.com/v1alpha1
+kind: SpyreClusterPolicy
+metadata:
+  name: spyreclusterpolicy-no-pod-validator
+spec:
+  devicePlugin:
+    repository: "docker.io/spyre-operator"
+    image: "spyre-device-plugin"
+    version: "dev"
+  metricsExporter:
+    enabled: false
+  podValidator:
+    enabled: true
+  scheduler: {}

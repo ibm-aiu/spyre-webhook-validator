@@ -1,0 +1,6 @@
+bin/*
+.vscode
+.idea
+vendor
+coverage-report.out
+coverage-report.html

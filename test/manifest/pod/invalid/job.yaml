@@ -1,0 +1,24 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: invalid-job
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        app: job-app
+    spec:
+      containers:
+      - name: app
+        image: registry.access.redhat.com/ubi9/ubi:latest
+        imagePullPolicy: IfNotPresent
+        command: ["tail", "-f", "/dev/null"]
+        resources:
+          limits:
+            ibm.com/spyre_pf_0000_1a_00.0: "1"
+            ibm.com/spyre_pf_0000_3d_00.0: "1"
+      restartPolicy: Never
