@@ -7,7 +7,7 @@ require (
 	github.com/ibm-aiu/spyre-operator v0.0.0-20260407051830-8b5ef79fe771
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	k8s.io/api v0.32.9
 	k8s.io/apimachinery v0.32.9
 	k8s.io/client-go v0.32.9
