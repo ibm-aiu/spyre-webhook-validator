@@ -20,20 +20,19 @@ COPY main.go main.go
 
 ARG BUILD_FLAGS=""
 
-ENV GOTOOLCHAIN="go1.24.13"
+ENV GOTOOLCHAIN="1.25.9"
 
 RUN echo "TARGETARCH = '${TARGETARCH}' TARGETOS='${TARGETOS}'" && \
     echo "GO ENV DUMP: " && go env GOVERSION && go env GOTOOLDIR && \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on \
     go build ${BUILD_FLAGS} -mod vendor -tags strictfipsruntime -a -o spyre-webhook-validator main.go
 
-# install useradd command
+# install useradd command and upgrade libcap
 RUN dnf --installroot=/tmp/ubi-micro \
     --nodocs --setopt=install_weak_deps=False \
     install -y \
-    shadow-utils openssl-libs openssl-fips-provider && \
-    dnf --installroot=/tmp/ubi-micro \
-    clean all
+    shadow-utils openssl-libs openssl-fips-provider libcap-2.48-10.el9_7.1 && \
+    dnf --installroot=/tmp/ubi-micro clean all
 
 # generate minimal image
 FROM registry.access.redhat.com/ubi9/ubi-micro:${BASE_UBI_IMAGE_TAG}
