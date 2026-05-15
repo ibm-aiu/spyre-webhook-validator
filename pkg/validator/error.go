@@ -13,10 +13,13 @@ import (
 )
 
 var (
-	MoreThanOneSpyreResourcesErr = errors.New("A pod cannot request or limit Spyre devices from more than one resource pool.")
-	NoSpyreSchedulerErr          = errors.New("A pod must use \"schedulerName: spyre-scheduler\".")
-	InvalidResourceAmountErr     = errors.New("A pod cannot request or limit Spyre devices for tier0, tier1, and tier2 with an odd number except 1.")             //nolint:lll
-	NodeNameWithSchedulerErr     = errors.New("A pod must not use \".spec.nodeName\" with \"schedulerName: spyre-scheduler\"; use '.spec.nodeSelector' instead.") //nolint:lll
+	ErrMoreThanOneSpyreResources = errors.New(
+		"a pod cannot request or limit Spyre devices from more than one resource pool")
+	ErrNoSpyreScheduler      = errors.New("a pod must use \"schedulerName: spyre-scheduler\"")
+	ErrInvalidResourceAmount = errors.New(
+		"a pod cannot request or limit Spyre devices for tier0, tier1, and tier2 with an odd number except 1")
+	ErrNodeNameWithScheduler = errors.New(
+		"a pod must not use \".spec.nodeName\" with \"schedulerName: spyre-scheduler\"; use '.spec.nodeSelector' instead")
 )
 
 func WrapConfigErr(err error) error {

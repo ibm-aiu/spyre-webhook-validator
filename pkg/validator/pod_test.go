@@ -47,7 +47,7 @@ func resourceList(name corev1.ResourceName, quantity resource.Quantity) corev1.R
 	}
 }
 
-func newPodValidator(state spyrev1alpha1.State, schedulerEnabled bool) *validator.PodValidator {
+func newPodValidator(schedulerEnabled bool) *validator.PodValidator {
 	clusterPolicyHandler := validator.NewClusterPolicyHandler()
 	clusterPolicyHandler.SetSchedulerEnabled(schedulerEnabled)
 	return validator.NewPodValidator(clusterPolicyHandler)
@@ -79,7 +79,7 @@ var _ = Describe("Pod", func() {
 			schedulerEnabled := false
 
 			It("allows Pod without spyre_pf", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -91,7 +91,7 @@ var _ = Describe("Pod", func() {
 			})
 
 			It("allows Pod with one specific spyre_pf", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -106,7 +106,7 @@ var _ = Describe("Pod", func() {
 			})
 
 			It("denies Pod with two specific spyre_pf", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -119,11 +119,11 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResources))
 			})
 
 			It("denies Pod with spyre_pf_tier0 and specific spyre_pf", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -136,11 +136,11 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResources))
 			})
 
 			It("denies Pod with spyre_pf and spyre_pf_tier0", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -153,11 +153,11 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResources))
 			})
 
 			DescribeTable("check invalid amount of tier resource", func(requests, limits corev1.ResourceList, expectedErr bool) {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -170,15 +170,30 @@ var _ = Describe("Pod", func() {
 				}
 				err := v.ValidatePod(pSpec)
 				if expectedErr {
-					Expect(err).Should(Equal(validator.InvalidResourceAmountErr))
+					Expect(err).Should(Equal(validator.ErrInvalidResourceAmount))
 				} else {
 					Expect(err).To(BeNil())
 				}
 			},
 				Entry("empty request/limit", nil, nil, false),
-				Entry("spyre_pf request/limit", resourceList("ibm.com/spyre_pf", oneQuant), resourceList("ibm.com/spyre_pf", oneQuant), false),
-				Entry("one spyre_tier0 request/limit", resourceList("ibm.com/spyre_pf_tier0", oneQuant), resourceList("ibm.com/spyre_pf_tier0", oneQuant), false),
-				Entry("even spyre_tier0 request/limit", resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("2")), resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("2")), false),
+				Entry(
+					"spyre_pf request/limit",
+					resourceList("ibm.com/spyre_pf", oneQuant),
+					resourceList("ibm.com/spyre_pf", oneQuant),
+					false,
+				),
+				Entry(
+					"one spyre_tier0 request/limit",
+					resourceList("ibm.com/spyre_pf_tier0", oneQuant),
+					resourceList("ibm.com/spyre_pf_tier0", oneQuant),
+					false,
+				),
+				Entry(
+					"even spyre_tier0 request/limit",
+					resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("2")),
+					resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("2")),
+					false,
+				),
 				Entry("odd spyre_tier0 request", resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("3")), nil, true),
 				Entry("odd spyre_tier0 limit", nil, resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("3")), true),
 				Entry("odd spyre_tier1 request", resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("3")), nil, true),
@@ -193,7 +208,7 @@ var _ = Describe("Pod", func() {
 			schedulerEnabled := true
 
 			It("denies Pod with two specific spyre_pf even if spyre-scheduler is specified", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					SchedulerName: "spyre-scheduler",
 					Containers: []corev1.Container{{
@@ -207,11 +222,11 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResources))
 			})
 
 			DescribeTable("deny incorrect scheduler name", func(resourceName string) {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					SchedulerName: "not-a-spyre-scheduler",
 					Containers: []corev1.Container{{
@@ -224,7 +239,7 @@ var _ = Describe("Pod", func() {
 						}},
 					}}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.NoSpyreSchedulerErr))
+				Expect(err).Should(Equal(validator.ErrNoSpyreScheduler))
 			},
 				Entry("spyre_pf", "ibm.com/spyre_pf"),
 				Entry("spyre_tier0", "ibm.com/spyre_tier0"),
@@ -233,7 +248,7 @@ var _ = Describe("Pod", func() {
 			)
 
 			It("skips validate Pod without Spyre resources (allow)", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "c1",
@@ -253,7 +268,7 @@ var _ = Describe("Pod", func() {
 			schedulerEnabled := false
 
 			It("does not deny Pod with .spec.schedulerName != spyre-scheduler", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Resources: corev1.ResourceRequirements{
@@ -275,7 +290,7 @@ var _ = Describe("Pod", func() {
 			schedulerEnabled := true
 
 			It("allows Pod with .spec.schedulerName = spyre-scheduler", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Resources: corev1.ResourceRequirements{
@@ -292,7 +307,7 @@ var _ = Describe("Pod", func() {
 			})
 
 			It("denies Pod with nodeName", func() {
-				v := newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)
+				v := newPodValidator(schedulerEnabled)
 				pSpec := corev1.PodSpec{
 					SchedulerName: "spyre-scheduler",
 					NodeName:      "myNode",
@@ -307,35 +322,36 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.NodeNameWithSchedulerErr))
+				Expect(err).Should(Equal(validator.ErrNodeNameWithScheduler))
 			})
 		})
 	})
 
 	Context("cluster policy check", func() {
-		DescribeTable("state (scheduler enabled)", func(state spyrev1alpha1.State, schedulerEnabled bool, expectedAllowed bool) {
-			v := newPodValidator(state, schedulerEnabled)
-			pSpec := corev1.PodSpec{
-				Containers: []corev1.Container{{
-					Resources: corev1.ResourceRequirements{
-						Limits: map[corev1.ResourceName]resource.Quantity{
-							"ibm.com/spyre_pf": oneQuant,
+		DescribeTable("state (scheduler enabled)",
+			func(state spyrev1alpha1.State, schedulerEnabled bool, expectedAllowed bool) {
+				v := newPodValidator(schedulerEnabled)
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Resources: corev1.ResourceRequirements{
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf": oneQuant,
+							},
 						},
-					},
-				}},
-			}
-			if schedulerEnabled {
-				pSpec.SchedulerName = "spyre-scheduler"
-			}
-			Expect(validator.IsSpyrePod(pSpec)).To(Equal(true))
-			err := v.ValidatePod(pSpec)
-			if expectedAllowed {
-				Expect(err).To(BeNil())
-			} else {
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(ContainSubstring("cannot deploy any Spyre pods"))
-			}
-		},
+					}},
+				}
+				if schedulerEnabled {
+					pSpec.SchedulerName = "spyre-scheduler"
+				}
+				Expect(validator.IsSpyrePod(pSpec)).To(Equal(true))
+				err := v.ValidatePod(pSpec)
+				if expectedAllowed {
+					Expect(err).To(BeNil())
+				} else {
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("cannot deploy any Spyre pods"))
+				}
+			},
 			Entry("ready (true)", spyrev1alpha1.Ready, true, true),
 			Entry("ready (false)", spyrev1alpha1.Ready, false, true),
 			Entry("not ready (true)", spyrev1alpha1.NotReady, true, true),
@@ -350,7 +366,7 @@ var _ = Describe("Pod", func() {
 
 		BeforeAll(func() {
 
-			os.Setenv("OPERATOR_NAMESPACE", opNs)
+			Expect(os.Setenv("OPERATOR_NAMESPACE", opNs)).To(Succeed())
 
 			var err error
 
@@ -395,7 +411,7 @@ var _ = Describe("Pod", func() {
 			Expect(err).To(Succeed())
 
 			hookServer.Register("/validate-pods", &webhook.Admission{
-				Handler: validator.AdmissionHandler{Validator: newPodValidator(spyrev1alpha1.Ready, schedulerEnabled)}})
+				Handler: validator.AdmissionHandler{Validator: newPodValidator(schedulerEnabled)}})
 			hookServer.Register("/validate-jobs", &webhook.Admission{
 				Handler: validator.AdmissionHandler{Validator: newJobValidator()}})
 			hookServer.Register("/validate-deployments", &webhook.Admission{

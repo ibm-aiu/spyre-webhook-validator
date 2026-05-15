@@ -93,7 +93,8 @@ var _ = Describe("SpyreClusterPolicy", func() {
 		}
 	},
 		Entry("all valid", validConfig, validConfig, validConfig, validConfig, false, false, false, ""),
-		Entry("invalid device plugin", invalidConfig, validConfig, validConfig, validConfig, false, false, false, "device plugin"),
+		Entry("invalid device plugin", invalidConfig, validConfig, validConfig, validConfig,
+			false, false, false, "device plugin"),
 		Entry("invalid scheduler", validConfig, invalidConfig, validConfig, validConfig, true, false, false, "scheduler"),
 		Entry("invalid scheduler (disabled)", validConfig, invalidConfig, validConfig, validConfig, false, false, false, ""),
 		Entry("invalid exporter", validConfig, validConfig, invalidConfig, validConfig, false, true, false, "exporter"),

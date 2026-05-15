@@ -43,30 +43,30 @@ func (v *PodValidator) ValidatePod(spec corev1.PodSpec) error {
 		return nil
 	}
 
-	if v.ClusterPolicyHandler.schedulerEnabled.Load() {
+	if v.schedulerEnabled.Load() {
 		if spec.SchedulerName != SpyreSchedulerName {
-			return NoSpyreSchedulerErr
+			return ErrNoSpyreScheduler
 		}
 		if spec.NodeName != "" {
-			return NodeNameWithSchedulerErr
+			return ErrNodeNameWithScheduler
 		}
 	}
 
 	for _, container := range spec.Containers {
 		if container.Resources.Requests != nil {
 			if hasMoreThanOneSpyreResources(container.Resources.Requests) {
-				return MoreThanOneSpyreResourcesErr
+				return ErrMoreThanOneSpyreResources
 			}
 			if !spyreTierResourceIsEvenNumberOrOne(container.Resources.Requests) {
-				return InvalidResourceAmountErr
+				return ErrInvalidResourceAmount
 			}
 		}
 		if container.Resources.Limits != nil {
 			if hasMoreThanOneSpyreResources(container.Resources.Limits) {
-				return MoreThanOneSpyreResourcesErr
+				return ErrMoreThanOneSpyreResources
 			}
 			if !spyreTierResourceIsEvenNumberOrOne(container.Resources.Limits) {
-				return InvalidResourceAmountErr
+				return ErrInvalidResourceAmount
 			}
 		}
 	}

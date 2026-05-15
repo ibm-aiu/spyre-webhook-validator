@@ -27,7 +27,7 @@ var _ = Describe("Main", Label("main"), Ordered, func() {
 	})
 
 	It("starts with debug loglevel when LOGLEVEL is set to \"debug\"", func() {
-		os.Setenv("LOGLEVEL", "debug")
+		Expect(os.Setenv("LOGLEVEL", "debug")).To(Succeed())
 		var logBuf bytes.Buffer
 		GinkgoWriter.TeeTo(&logBuf)
 		validator.PrepareLogger()
