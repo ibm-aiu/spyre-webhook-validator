@@ -23,7 +23,7 @@ type AdmissionHandler struct {
 }
 
 func (h AdmissionHandler) Handle(ctx context.Context, request admission.Request) admission.Response {
-	if err := h.Validator.Validate(request.Object.Raw); err != nil {
+	if err := h.Validate(request.Object.Raw); err != nil {
 		return admission.Errored(http.StatusForbidden, err)
 	}
 	return admission.Allowed("")

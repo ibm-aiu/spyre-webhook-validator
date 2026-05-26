@@ -26,5 +26,5 @@ func (v *JobValidator) Validate(raw []byte) error {
 	if err := json.Unmarshal(raw, &job); err != nil {
 		return err
 	}
-	return v.PodValidator.ValidatePod(job.Spec.Template.Spec)
+	return v.ValidatePod(job.Spec.Template.Spec)
 }

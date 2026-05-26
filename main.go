@@ -30,7 +30,6 @@ var (
 )
 
 func prepareLogger() {
-
 	// enable zap logger to generate controller-runtime log entries
 	if logLevelConfig, exists := os.LookupEnv(("LOGLEVEL")); exists {
 		if l, err := zapcore.ParseLevel(logLevelConfig); err == nil {
@@ -51,11 +50,9 @@ func prepareLogger() {
 	klog.SetLogger(zlogger)
 	ctrl.Log.Info("controller-runtime log is set", "loglevel", loglevel.String())
 	klog.Infof("validator log is set with loglevel: %s", loglevel.String())
-
 }
 
 func main() {
-
 	prepareLogger()
 
 	webhookCertPath := "/etc/webhook/certs"

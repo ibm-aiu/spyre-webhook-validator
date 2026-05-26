@@ -26,5 +26,5 @@ func (v *DeploymentValidator) Validate(raw []byte) error {
 	if err := json.Unmarshal(raw, &deploy); err != nil {
 		return err
 	}
-	return v.PodValidator.ValidatePod(deploy.Spec.Template.Spec)
+	return v.ValidatePod(deploy.Spec.Template.Spec)
 }

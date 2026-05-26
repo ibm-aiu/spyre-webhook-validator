@@ -119,7 +119,7 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResource))
 			})
 
 			It("denies Pod with spyre_pf_tier0 and specific spyre_pf", func() {
@@ -136,7 +136,7 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResource))
 			})
 
 			It("denies Pod with spyre_pf and spyre_pf_tier0", func() {
@@ -153,7 +153,7 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResource))
 			})
 
 			DescribeTable("check invalid amount of tier resource", func(requests, limits corev1.ResourceList, expectedErr bool) {
@@ -170,7 +170,7 @@ var _ = Describe("Pod", func() {
 				}
 				err := v.ValidatePod(pSpec)
 				if expectedErr {
-					Expect(err).Should(Equal(validator.InvalidResourceAmountErr))
+					Expect(err).Should(Equal(validator.ErrInvalidResourceAmount))
 				} else {
 					Expect(err).To(BeNil())
 				}
@@ -207,7 +207,7 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.MoreThanOneSpyreResourcesErr))
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResource))
 			})
 
 			DescribeTable("deny incorrect scheduler name", func(resourceName string) {
@@ -224,7 +224,7 @@ var _ = Describe("Pod", func() {
 						}},
 					}}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.NoSpyreSchedulerErr))
+				Expect(err).Should(Equal(validator.ErrNoSpyreScheduler))
 			},
 				Entry("spyre_pf", "ibm.com/spyre_pf"),
 				Entry("spyre_tier0", "ibm.com/spyre_tier0"),
@@ -307,7 +307,7 @@ var _ = Describe("Pod", func() {
 					}},
 				}
 				err := v.ValidatePod(pSpec)
-				Expect(err).Should(Equal(validator.NodeNameWithSchedulerErr))
+				Expect(err).Should(Equal(validator.ErrNodeNameWithScheduler))
 			})
 		})
 	})

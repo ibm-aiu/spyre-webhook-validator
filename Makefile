@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 GOLANG_VERSION		?= $(shell cd $(REPO_ROOT) && go list -f {{.GoVersion}} -m)
-BUILDER_IMAGE		?= registry.access.redhat.com/ubi9/go-toolset:1.24.6-1758501173
+BUILDER_IMAGE		?= registry.access.redhat.com/ubi9/go-toolset:1.25.9-1778675823
 MAKEFILE_PATH		:= $(abspath $(lastword $(MAKEFILE_LIST)))
 REPO_ROOT 			:= $(abspath $(patsubst %/,%,$(dir $(MAKEFILE_PATH))))
 CURRENT_DIR			:= $(shell pwd)
@@ -53,9 +53,10 @@ YQ				?= $(LOCALBIN)/yq
 YAMLFMT			?= $(LOCALBIN)/yamlfmt
 
 ## Tool Versions
-ENVTEST_K8S_VERSION			?= 1.31
-GINKGO_VERSION				?= v2.25.1
-GOLANGCI_LINT_VERSION		?= 1.64.8
+CONTROLLER_TOOLS_VERSION 	?= v0.22.0
+ENVTEST_K8S_VERSION			?= 1.34
+GINKGO_VERSION 				?= v2.28.3
+GOLANGCI_LINT_VERSION 		?= 2.4.0
 YQ_VERSION					?= v4.29.2
 YAMLFMT_VERSION				?= v0.17.0
 PYTHON                      ?= python3
@@ -99,7 +100,7 @@ $(GINKGO):$(LOCALBIN)
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download and install setup-envtest
 $(ENVTEST):$(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20240624150636-162a113134de
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.22
 
 GOLANGCI_LINT_INSTALL_SCRIPT ?= 'https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh'
 .PHONY: golangci-lint
@@ -157,11 +158,11 @@ build: vendor ## Build local binary
 
 .PHONY: lint
 lint: golangci-lint vendor ## Run golangci-lint against code.
-	$(GOLANGCI_LINT) run --sort-results --config $(REPO_ROOT)/.golangci.yaml --go $(GOLANG_VERSION)
+	$(GOLANGCI_LINT) run --config $(REPO_ROOT)/.golangci.yaml
 
 .PHONY: lint-fix
 lint-fix: golangci-lint vendor ## Run golangci-lint against code.
-	$(GOLANGCI_LINT) run --fix --config $(REPO_ROOT)/.golangci.yaml --go $(GOLANG_VERSION)
+	$(GOLANGCI_LINT) run --fix --config $(REPO_ROOT)/.golangci.yaml
 
 .PHONY: vulcheck
 vulcheck: govulncheck ## Scan for golang vulnerabilities

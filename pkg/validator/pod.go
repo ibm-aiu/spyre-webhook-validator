@@ -43,33 +43,57 @@ func (v *PodValidator) ValidatePod(spec corev1.PodSpec) error {
 		return nil
 	}
 
-	if v.ClusterPolicyHandler.schedulerEnabled.Load() {
-		if spec.SchedulerName != SpyreSchedulerName {
-			return NoSpyreSchedulerErr
-		}
-		if spec.NodeName != "" {
-			return NodeNameWithSchedulerErr
-		}
+	if err := v.validateScheduler(spec); err != nil {
+		return err
 	}
 
-	for _, container := range spec.Containers {
-		if container.Resources.Requests != nil {
-			if hasMoreThanOneSpyreResources(container.Resources.Requests) {
-				return MoreThanOneSpyreResourcesErr
-			}
-			if !spyreTierResourceIsEvenNumberOrOne(container.Resources.Requests) {
-				return InvalidResourceAmountErr
-			}
+	return v.validateContainerResources(spec.Containers)
+}
+
+// validateScheduler checks if the scheduler configuration is valid for Spyre pods
+func (v *PodValidator) validateScheduler(spec corev1.PodSpec) error {
+	if !v.schedulerEnabled.Load() {
+		return nil
+	}
+
+	if spec.SchedulerName != SpyreSchedulerName {
+		return ErrNoSpyreScheduler
+	}
+
+	if spec.NodeName != "" {
+		return ErrNodeNameWithScheduler
+	}
+
+	return nil
+}
+
+// validateContainerResources validates resource requests and limits for all containers
+func (v *PodValidator) validateContainerResources(containers []corev1.Container) error {
+	for _, container := range containers {
+		if err := validateResourceList(container.Resources.Requests); err != nil {
+			return err
 		}
-		if container.Resources.Limits != nil {
-			if hasMoreThanOneSpyreResources(container.Resources.Limits) {
-				return MoreThanOneSpyreResourcesErr
-			}
-			if !spyreTierResourceIsEvenNumberOrOne(container.Resources.Limits) {
-				return InvalidResourceAmountErr
-			}
+		if err := validateResourceList(container.Resources.Limits); err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+// validateResourceList validates a single resource list (requests or limits)
+func validateResourceList(resourceList corev1.ResourceList) error {
+	if resourceList == nil {
+		return nil
+	}
+
+	if hasMoreThanOneSpyreResources(resourceList) {
+		return ErrMoreThanOneSpyreResource
+	}
+
+	if !spyreTierResourceIsEvenNumberOrOne(resourceList) {
+		return ErrInvalidResourceAmount
+	}
+
 	return nil
 }
 
