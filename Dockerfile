@@ -19,13 +19,16 @@ COPY pkg/ pkg/
 COPY main.go main.go
 
 ARG BUILD_FLAGS=""
+ENV GOTOOLCHAIN="local"
 
-ENV GOTOOLCHAIN="go1.25.10"
-
-RUN echo "TARGETARCH = '${TARGETARCH}' TARGETOS='${TARGETOS}'" && \
-    echo "GO ENV DUMP: " && go env GOVERSION && go env GOTOOLDIR && \
-    CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GO111MODULE=on \
+RUN echo "TARGETARCH: ${TARGETARCH}" && \
+    echo "TARGETOS: ${TARGETOS}" && \
+    echo -n "GOVERSION: " && go env GOVERSION && \
+    echo -n "GOTOOLCHAIN: " && go env GOTOOLCHAIN && \
+    CGO_ENABLED=1 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" GO111MODULE=on GOTOOLCHAIN="${GOTOOLCHAIN}" \
     go build ${BUILD_FLAGS} -mod vendor -tags strictfipsruntime -a -o spyre-webhook-validator main.go
+
+
 
 # install useradd command
 RUN dnf --installroot=/tmp/ubi-micro \
