@@ -5,7 +5,7 @@ go 1.25.9
 require (
 	github.com/dustinkirkland/golang-petname v0.0.0-20240428194347-eebcea082ee0
 	github.com/ibm-aiu/spyre-operator v0.0.0-20260606012150-cd6d0720c7e3
-	github.com/onsi/ginkgo/v2 v2.28.3
+	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.34.8
