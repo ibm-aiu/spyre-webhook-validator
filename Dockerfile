@@ -19,7 +19,7 @@ COPY pkg/ pkg/
 COPY main.go main.go
 
 ARG BUILD_FLAGS=""
-ENV GOTOOLCHAIN="local"
+ENV GOTOOLCHAIN="go1.25.10"
 
 RUN echo "TARGETARCH: ${TARGETARCH}" && \
     echo "TARGETOS: ${TARGETOS}" && \
