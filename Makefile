@@ -54,7 +54,6 @@ GOLANGCI_LINT	?= $(LOCALBIN)/golangci-lint
 GOVULCHECK		?= $(LOCALBIN)/govulncheck
 GINKGO			?= $(LOCALBIN)/ginkgo
 YQ				?= $(LOCALBIN)/yq
-YAMLFMT			?= $(LOCALBIN)/yamlfmt
 
 ## Tool Versions
 CONTROLLER_TOOLS_VERSION 	?= v0.22.0
@@ -62,7 +61,6 @@ ENVTEST_K8S_VERSION			?= 1.34
 GINKGO_VERSION 				?= v2.28.3
 GOLANGCI_LINT_VERSION		?= 2.11.4
 YQ_VERSION					?= v4.29.2
-YAMLFMT_VERSION				?= v0.17.0
 PYTHON                      ?= python3
 PIP                         ?= pip3
 
@@ -89,6 +87,14 @@ ADDITIONAL_IMAGE_TAG ?= latest
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+.PHONY: version
+version: ## Display image version
+	@echo "Image version: $(VERSION)"
+
+.PHONY: echo-version
+echo-version: ## Print (echo) the current version
+	$(info $(VERSION))
+	@echo > /dev/null
 
 ##@ Development tools
 
@@ -117,11 +123,6 @@ yq: $(YQ) ## Download yq locally if necessary.
 $(YQ): $(LOCALBIN)
 	test -s $(YQ) || GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@$(YQ_VERSION)
 
-.PHONY: yamlfmt
-yamlfmt: $(YAMLFMT) ## Download yamlfmt locally if necessary
-$(YAMLFMT):$(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install github.com/google/yamlfmt/cmd/yamlfmt@$(YAMLFMT_VERSION)
-
 .PHONY: govulncheck
 govulncheck: $(GOVULCHECK) ## Download govulncheck tool if necessary
 $(GOVULCHECK): $(LOCALBIN)
@@ -140,7 +141,6 @@ test: ginkgo envtest fmt vet ## Run unit tests.
 			echo "Total test coverage ($${percentage}%) is less than the coverage threshold ($(CODECOV_PERCENT)%)."; \
 			exit 1; \
 		fi
-
 
 ##@ Development Targets
 
@@ -202,68 +202,6 @@ docker-push: ## Push spyre webhook validator image image for the build host arch
 
 .PHONY: docker-build-push
 docker-build-push: docker-build docker-push ## Build and push the spyre webhook validator image for the build host
-
-.PHONY: docker-build-amd64
-docker-build-amd64: vendor ## Build the spyre webhook validator image for linux/amd64
-ifeq ($(DOCKER), docker)
-	docker buildx build --platform linux/amd64 \
-		$(DOCKER_BUILD_OPTS) \
-		--push --pull  --load --no-cache \
-		--provenance false --sbom false \
-		--tag $(IMAGE)-amd64 \
-		--tag $(IMAGE_NAME):$(ADDITIONAL_IMAGE_TAG)-amd64 \
-		--build-arg VERSION="$(VERSION)" \
-		--build-arg BUILDER_IMAGE="$(BUILDER_IMAGE)" \
-		--build-arg BUILD_FLAGS="$(DOCKER_GO_BUILD_FLAGS)" \
-		--file $(DOCKERFILE) $(CURDIR)
-else
-	podman build --platform linux/amd64 \
-		--format docker \
-		$(DOCKER_BUILD_OPTS) \
-		--build-arg VERSION="$(VERSION)" \
-		--build-arg BUILD_FLAGS="$(DOCKER_GO_BUILD_FLAGS)" \
-		--build-arg BUILDER_IMAGE="$(BUILDER_IMAGE)" \
-		--tag $(IMAGE)-amd64 \
-		--tag $(IMAGE_NAME):$(ADDITIONAL_IMAGE_TAG)-amd64 \
-		--file $(DOCKERFILE) $(CURDIR)
-endif
-
-
-.PHONY: docker-push-amd64
-docker-push-amd64: ## Push webhook validator for amd64 only
-ifeq ($(DOCKER), docker)
-	echo "Images already pushed by Docker"
-else
-	$(DOCKER) push $(IMAGE)-amd64
-endif
-
-
-.PHONY: docker-build-manifest
-docker-build-manifest: ## Build spyre webhook validator manifest for all architectures
-ifeq ($(DOCKER), docker)
-	docker manifest annotate $(IMAGE) $(IMAGE)-amd64   --os linux --arch amd64
-else
-	podman manifest create $(IMAGE)
-	podman manifest add $(IMAGE) $(IMAGE)-amd64
-endif
-
-.PHONY: docker-push-manifest
-docker-push-manifest: ## Push webhook validator image multi architecture manifest
-	$(DOCKER) manifest push $(IMAGE)
-
-.PHONY: docker-buildx
-docker-buildx: docker-build-amd64  ## Build webhook validator image for all architectures
-
-.PHONY: docker-pushx ## Push spyre webhook validator image image for all architectures
-docker-pushx: docker-push-amd64 docker-build-manifest docker-push-manifest
-
-.PHONY: docker-build-pushx
-docker-build-pushx: docker-buildx docker-pushx ## Build and push the multi architecture docker image
-
-.PHONY: docker-remove-images
-docker-remove-images: ## Remove images from build host
-	$(DOCKER) manifest rm $(IMAGE) || true
-	$(DOCKER) rmi -f $(IMAGE)-amd64 || true
 
 ##@ Deployment
 
