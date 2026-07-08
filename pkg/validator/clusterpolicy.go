@@ -22,8 +22,10 @@ const (
 )
 
 type ClusterPolicyHandler struct {
-	schedulerEnabled atomic.Bool
-	mu               sync.RWMutex
+	schedulerEnabled  atomic.Bool
+	vfModeEnabled     atomic.Bool
+	operatorNamespace atomic.Value
+	mu                sync.RWMutex
 }
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
@@ -47,6 +49,8 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 	}
 	schedulerEnabled := isSchedulerEnabled(clusterPolicy.Spec.ExperimentalMode)
 	v.schedulerEnabled.Store(schedulerEnabled)
+	v.vfModeEnabled.Store(clusterPolicy.Spec.CardManagement.Enabled)
+	v.operatorNamespace.Store(clusterPolicy.Status.Namespace)
 	if err := validateScheduler(clusterPolicy.Spec.Scheduler, schedulerEnabled); err != nil {
 		return fmt.Errorf("failed to validate scheduler: %w", err)
 	}

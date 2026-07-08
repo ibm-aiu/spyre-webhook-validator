@@ -26,6 +26,7 @@ var (
 	jobHookHandler         = validator.AdmissionHandler{Validator: validator.NewJobValidator(clusterPolicyValidator)}
 	deploymentHookHandler  = validator.AdmissionHandler{Validator: validator.NewDeploymentValidator(clusterPolicyValidator)} //nolint:lll
 	clusterPolicyHandler   = validator.AdmissionHandler{Validator: clusterPolicyValidator}
+	resourceClaimHandler   = validator.ResourceClaimAdmissionHandler{Validator: validator.NewResourceClaimValidator(clusterPolicyValidator)}
 	loglevel               = zapcore.InfoLevel
 )
 
@@ -75,6 +76,7 @@ func main() {
 	hookServer.Register("/validate-jobs", &webhook.Admission{Handler: jobHookHandler})
 	hookServer.Register("/validate-deployments", &webhook.Admission{Handler: deploymentHookHandler})
 	hookServer.Register("/validate-clusterpolicy", &webhook.Admission{Handler: clusterPolicyHandler})
+	hookServer.Register("/validate-resourceclaims", &webhook.Admission{Handler: resourceClaimHandler})
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		ctrl.Log.Error(err, "Could not add health check to manager")
 		os.Exit(1)

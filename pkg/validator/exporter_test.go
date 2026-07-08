@@ -19,6 +19,14 @@ func (v *ClusterPolicyHandler) GetSchedulerEnabled() bool {
 	return v.schedulerEnabled.Load()
 }
 
+func (v *ClusterPolicyHandler) SetVFModeEnabled(enabled bool) {
+	v.vfModeEnabled.Store(enabled)
+}
+
+func (v *ClusterPolicyHandler) SetOperatorNamespace(ns string) {
+	v.operatorNamespace.Store(ns)
+}
+
 func (v *ClusterPolicyHandler) ValidateClusterPolicy(clusterPolicy spyrev1alpha1.SpyreClusterPolicy) error {
 	return v.validate(clusterPolicy)
 }
