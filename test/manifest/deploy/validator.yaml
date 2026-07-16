@@ -27,6 +27,14 @@ spec:
           value: "true"
         - name: LOGLEVEL
           value: "debug"
+        - name: VF_MODE_ENABLED
+          value: "1"
+        - name: DRA_DRIVER_ENABLED
+          value: "1"
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         ports:
         - containerPort: 8443
         - containerPort: 8081
