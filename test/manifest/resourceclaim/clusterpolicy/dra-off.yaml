@@ -1,0 +1,23 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+# DRA driver OFF: spec.devicePlugin.draDriver = false (classic device plugin).
+# With this applied, the ResourceClaim webhook imposes no restriction and every
+# claim/*.yaml is allowed regardless of VF mode or DeviceClass.
+apiVersion: spyre.ibm.com/v1alpha1
+kind: SpyreClusterPolicy
+metadata:
+  name: spyreclusterpolicy
+spec:
+  cardManagement:
+    enabled: true
+  devicePlugin:
+    draDriver: false
+    repository: "docker.io/spyre-operator"
+    image: "spyre-device-plugin"
+    version: "dev"
+  metricsExporter:
+    enabled: false
+  podValidator:
+    enabled: false
+  scheduler: {}

@@ -1,0 +1,23 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+# VF mode OFF: spec.cardManagement.enabled = false.
+# Applying this over vf-on.yaml is an UPDATE that re-triggers
+# /validate-clusterpolicy and refreshes the cached vfMode to false.
+apiVersion: spyre.ibm.com/v1alpha1
+kind: SpyreClusterPolicy
+metadata:
+  name: spyreclusterpolicy
+spec:
+  cardManagement:
+    enabled: false
+  devicePlugin:
+    draDriver: true
+    repository: "docker.io/spyre-operator"
+    image: "spyre-device-plugin"
+    version: "dev"
+  metricsExporter:
+    enabled: false
+  podValidator:
+    enabled: false
+  scheduler: {}
