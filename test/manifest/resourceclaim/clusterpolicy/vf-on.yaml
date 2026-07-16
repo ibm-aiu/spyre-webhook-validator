@@ -1,0 +1,24 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+# VF mode ON: spec.cardManagement.enabled = true.
+# The name MUST be "spyreclusterpolicy" (validateSinglePolicy) and the policy
+# MUST otherwise pass /validate-clusterpolicy (devicePlugin.image set, etc.),
+# otherwise the webhook rejects it and the vfMode cache is not updated.
+apiVersion: spyre.ibm.com/v1alpha1
+kind: SpyreClusterPolicy
+metadata:
+  name: spyreclusterpolicy
+spec:
+  cardManagement:
+    enabled: true
+  devicePlugin:
+    draDriver: true
+    repository: "docker.io/spyre-operator"
+    image: "spyre-device-plugin"
+    version: "dev"
+  metricsExporter:
+    enabled: false
+  podValidator:
+    enabled: false
+  scheduler: {}
