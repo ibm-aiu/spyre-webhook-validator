@@ -28,3 +28,16 @@ func (h AdmissionHandler) Handle(ctx context.Context, request admission.Request)
 	}
 	return admission.Allowed("")
 }
+
+// ResourceClaimAdmissionHandler is a webhook handler for ResourceClaim resources.
+// Unlike AdmissionHandler it forwards the request namespace to the validator.
+type ResourceClaimAdmissionHandler struct {
+	Validator *ResourceClaimValidator
+}
+
+func (h ResourceClaimAdmissionHandler) Handle(ctx context.Context, request admission.Request) admission.Response {
+	if err := h.Validator.Validate(request.Namespace, request.Object.Raw); err != nil {
+		return admission.Errored(http.StatusForbidden, err)
+	}
+	return admission.Allowed("")
+}
