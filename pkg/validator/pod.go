@@ -47,7 +47,10 @@ func (v *PodValidator) ValidatePod(spec corev1.PodSpec) error {
 		return err
 	}
 
-	return v.validateContainerResources(spec.Containers)
+	allContainers := make([]corev1.Container, len(spec.Containers)+len(spec.InitContainers))
+	copy(allContainers, spec.Containers)
+	copy(allContainers[len(spec.Containers):], spec.InitContainers)
+	return v.validateContainerResources(allContainers)
 }
 
 // validateScheduler checks if the scheduler configuration is valid for Spyre pods
@@ -97,9 +100,13 @@ func validateResourceList(resourceList corev1.ResourceList) error {
 	return nil
 }
 
-// isSpyrePod returns true if the given Pod limits or requests Spyre.
+// isSpyrePod returns true if the given Pod limits or requests Spyre in any container,
+// including init containers.
 func isSpyrePod(spec corev1.PodSpec) bool {
-	for _, c := range spec.Containers {
+	allContainers := make([]corev1.Container, len(spec.Containers)+len(spec.InitContainers))
+	copy(allContainers, spec.Containers)
+	copy(allContainers[len(spec.Containers):], spec.InitContainers)
+	for _, c := range allContainers {
 		for k := range c.Resources.Requests {
 			if strings.HasPrefix(string(k), SpyrePrefix) {
 				return true
