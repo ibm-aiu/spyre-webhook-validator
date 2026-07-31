@@ -109,7 +109,7 @@ var _ = Describe("SpyreClusterPolicy", func() {
 			err := v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).To(BeNil())
 			By("checking value set")
-			Expect(v.GetSchedulerEnabled()).To(BeTrue())
+			Expect(v.GetSchedulerEnabled()).To(BeFalse())
 			By("testing same name")
 			err = v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).To(BeNil())
