@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -27,7 +28,9 @@ type ClusterPolicyHandler struct {
 }
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
-	return &ClusterPolicyHandler{}
+	h := &ClusterPolicyHandler{}
+	h.schedulerEnabled.Store(os.Getenv("externalDeviceReservation") == "1")
+	return h
 }
 
 func (v *ClusterPolicyHandler) Validate(raw []byte) error {
@@ -46,7 +49,6 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 		return fmt.Errorf("failed to validate device plugin: %w", err)
 	}
 	schedulerEnabled := isSchedulerEnabled(clusterPolicy.Spec.ExperimentalMode)
-	v.schedulerEnabled.Store(schedulerEnabled)
 	if err := validateScheduler(clusterPolicy.Spec.Scheduler, schedulerEnabled); err != nil {
 		return fmt.Errorf("failed to validate scheduler: %w", err)
 	}
