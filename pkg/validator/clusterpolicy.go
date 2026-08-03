@@ -29,7 +29,7 @@ type ClusterPolicyHandler struct {
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
 	h := &ClusterPolicyHandler{}
-	h.schedulerEnabled.Store(os.Getenv("externalDeviceReservation") == "1")
+	h.schedulerEnabled.Store(os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1")
 	return h
 }
 
