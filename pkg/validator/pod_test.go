@@ -188,6 +188,94 @@ var _ = Describe("Pod", func() {
 			)
 		})
 
+		Context("init container bypass", func() {
+
+			It("detects Spyre pod when resources are only in init containers", func() {
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+					}},
+					InitContainers: []corev1.Container{{
+						Name:  "init",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf": oneQuant,
+							},
+						},
+					}},
+				}
+				Expect(validator.IsSpyrePod(pSpec)).To(Equal(true))
+			})
+
+			It("denies Pod missing spyre-scheduler when Spyre is requested only in init container", func() {
+				v := newPodValidator(spyrev1alpha1.Ready, true)
+				pSpec := corev1.PodSpec{
+					SchedulerName: "not-spyre-scheduler",
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+					}},
+					InitContainers: []corev1.Container{{
+						Name:  "init",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf": oneQuant,
+							},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).Should(Equal(validator.ErrNoSpyreScheduler))
+			})
+
+			It("denies init container with two specific spyre_pf resources", func() {
+				v := newPodValidator(spyrev1alpha1.Ready, false)
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+					}},
+					InitContainers: []corev1.Container{{
+						Name:  "init",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf_0000_1a_00.0": oneQuant,
+								"ibm.com/spyre_pf_0000_3d_00.0": oneQuant,
+							},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).Should(Equal(validator.ErrMoreThanOneSpyreResource))
+			})
+
+			It("denies init container with odd tier resource amount", func() {
+				v := newPodValidator(spyrev1alpha1.Ready, false)
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+					}},
+					InitContainers: []corev1.Container{{
+						Name:  "init",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf_tier0": resource.MustParse("3"),
+							},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).Should(Equal(validator.ErrInvalidResourceAmount))
+			})
+
+		})
+
 		Context("with-scheduler", func() {
 
 			schedulerEnabled := true
