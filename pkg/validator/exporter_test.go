@@ -12,7 +12,7 @@ import (
 )
 
 func (v *ClusterPolicyHandler) GetSchedulerEnabled() bool {
-	return v.schedulerEnabled.Load()
+	return v.schedulerEnabled
 }
 
 func (v *ClusterPolicyHandler) ValidateClusterPolicy(clusterPolicy spyrev1alpha1.SpyreClusterPolicy) error {
