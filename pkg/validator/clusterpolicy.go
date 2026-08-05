@@ -12,8 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
-	"sync/atomic"
 
 	spyrev1alpha1 "github.com/ibm-aiu/spyre-operator/api/v1alpha1"
 )
@@ -23,14 +21,13 @@ const (
 )
 
 type ClusterPolicyHandler struct {
-	schedulerEnabled atomic.Bool
-	mu               sync.RWMutex
+	schedulerEnabled bool
 }
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
-	h := &ClusterPolicyHandler{}
-	h.schedulerEnabled.Store(os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1")
-	return h
+	return &ClusterPolicyHandler{
+		schedulerEnabled: os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1",
+	}
 }
 
 func (v *ClusterPolicyHandler) Validate(raw []byte) error {
@@ -62,8 +59,6 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 }
 
 func (v *ClusterPolicyHandler) validateSinglePolicy(clusterPolicy spyrev1alpha1.SpyreClusterPolicy) error {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
 	if clusterPolicy.Name != ValidClusterPolicyName {
 		return fmt.Errorf("SpyreClusterPolicy must name %s to ensure a single cluster policy", ValidClusterPolicyName)
 	}

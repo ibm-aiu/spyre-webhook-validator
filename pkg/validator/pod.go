@@ -55,7 +55,7 @@ func (v *PodValidator) ValidatePod(spec corev1.PodSpec) error {
 
 // validateScheduler checks if the scheduler configuration is valid for Spyre pods
 func (v *PodValidator) validateScheduler(spec corev1.PodSpec) error {
-	if !v.schedulerEnabled.Load() {
+	if !v.schedulerEnabled {
 		return nil
 	}
 
