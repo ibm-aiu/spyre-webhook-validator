@@ -104,6 +104,7 @@ var _ = Describe("SpyreClusterPolicy", func() {
 
 	Context("single policy", func() {
 		It("validate name", func() {
+			GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
 			v := validator.NewClusterPolicyHandler()
 			clusterPolicy := genValidClusterPolicy()
 			err := v.ValidateClusterPolicy(clusterPolicy)

@@ -11,10 +11,6 @@ import (
 	spyrev1alpha1 "github.com/ibm-aiu/spyre-operator/api/v1alpha1"
 )
 
-func (v *ClusterPolicyHandler) SetSchedulerEnabled(schedulerEnabled bool) {
-	v.schedulerEnabled.Store(schedulerEnabled)
-}
-
 func (v *ClusterPolicyHandler) GetSchedulerEnabled() bool {
 	return v.schedulerEnabled.Load()
 }

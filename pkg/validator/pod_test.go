@@ -48,23 +48,22 @@ func resourceList(name corev1.ResourceName, quantity resource.Quantity) corev1.R
 }
 
 func newPodValidator(state spyrev1alpha1.State, schedulerEnabled bool) *validator.PodValidator {
-	clusterPolicyHandler := validator.NewClusterPolicyHandler()
-	clusterPolicyHandler.SetSchedulerEnabled(schedulerEnabled)
-	return validator.NewPodValidator(clusterPolicyHandler)
+	if schedulerEnabled {
+		GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
+	} else {
+		GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "")
+	}
+	return validator.NewPodValidator(validator.NewClusterPolicyHandler())
 }
 
 func newJobValidator() *validator.JobValidator {
-	schedulerEnabled := true
-	clusterPolicyHandler := validator.NewClusterPolicyHandler()
-	clusterPolicyHandler.SetSchedulerEnabled(schedulerEnabled)
-	return validator.NewJobValidator(clusterPolicyHandler)
+	GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
+	return validator.NewJobValidator(validator.NewClusterPolicyHandler())
 }
 
 func newDeploymentValidator() *validator.DeploymentValidator {
-	schedulerEnabled := true
-	clusterPolicyHandler := validator.NewClusterPolicyHandler()
-	clusterPolicyHandler.SetSchedulerEnabled(schedulerEnabled)
-	return validator.NewDeploymentValidator(clusterPolicyHandler)
+	GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
+	return validator.NewDeploymentValidator(validator.NewClusterPolicyHandler())
 }
 
 var _ = Describe("Pod", func() {
