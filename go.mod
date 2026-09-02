@@ -1,6 +1,6 @@
 module github.com/ibm-aiu/spyre-webhook-validator
 
-go 1.26.4
+go 1.26.7
 
 require (
 	github.com/dustinkirkland/golang-petname v0.0.0-20240428194347-eebcea082ee0
