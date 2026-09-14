@@ -15,6 +15,18 @@ func (v *ClusterPolicyHandler) GetSchedulerEnabled() bool {
 	return v.schedulerEnabled
 }
 
+func (v *ClusterPolicyHandler) SetVFModeEnabled(enabled bool) {
+	v.vfModeEnabled = enabled
+}
+
+func (v *ClusterPolicyHandler) SetDraDriverEnabled(enabled bool) {
+	v.draDriverEnabled = enabled
+}
+
+func (v *ClusterPolicyHandler) SetOperatorNamespace(ns string) {
+	v.operatorNamespace = ns
+}
+
 func (v *ClusterPolicyHandler) ValidateClusterPolicy(clusterPolicy spyrev1alpha1.SpyreClusterPolicy) error {
 	return v.validate(clusterPolicy)
 }

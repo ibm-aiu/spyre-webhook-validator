@@ -21,12 +21,18 @@ const (
 )
 
 type ClusterPolicyHandler struct {
-	schedulerEnabled bool
+	schedulerEnabled  bool
+	vfModeEnabled     bool
+	draDriverEnabled  bool
+	operatorNamespace string
 }
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
 	return &ClusterPolicyHandler{
-		schedulerEnabled: os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1",
+		schedulerEnabled:  os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1",
+		vfModeEnabled:     os.Getenv("VF_MODE_ENABLED") == "1",
+		draDriverEnabled:  os.Getenv("DRA_DRIVER_ENABLED") == "1",
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
