@@ -53,6 +53,10 @@ GOLANGCI_LINT	?= $(LOCALBIN)/golangci-lint
 GOVULCHECK		?= $(LOCALBIN)/govulncheck
 GINKGO			?= $(LOCALBIN)/ginkgo
 YQ				?= $(LOCALBIN)/yq
+CONTROLLER_GEN	?= $(LOCALBIN)/controller-gen
+
+# Directory the generated spyre-operator CRDs are written to.
+CRD_OUTPUT_DIR	?= test/manifest/crd
 
 ## Tool Versions
 CONTROLLER_TOOLS_VERSION 	?= v0.22.0
@@ -127,6 +131,25 @@ govulncheck: $(GOVULCHECK) ## Download govulncheck tool if necessary
 $(GOVULCHECK): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install golang.org/x/vuln/cmd/govulncheck@latest
 
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen if necessary
+$(CONTROLLER_GEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+# Generate CRDs for external types (SpyreClusterPolicy) straight from the
+# spyre-operator module already required by go.mod. Adapted from
+# spyre-scheduler-plugins: resolve the version via go mod graph, then run
+# controller-gen against that module's source in the Go module cache.
+define go-mod-version
+$(shell go mod graph | grep $(1) 2>/dev/null | head -n 1 | cut -d'@' -f 2)
+endef
+
+define fetch-external-crds
+GOFLAGS="-mod=readonly" $(CONTROLLER_GEN) crd \
+paths=$(shell go env GOPATH)/pkg/mod/$(1)@$(call go-mod-version,$(1))/$(2)/... \
+output:crd:artifacts:config=$(CRD_OUTPUT_DIR)
+endef
+
 ##@ Test targets
 
 .PHONY: test
@@ -140,6 +163,10 @@ test: ginkgo envtest fmt vet ## Run unit tests.
 			echo "Total test coverage ($${percentage}%) is less than the coverage threshold ($(CODECOV_PERCENT)%)."; \
 			exit 1; \
 		fi
+
+.PHONY: e2e-test
+e2e-test: vendor ## Run ResourceClaim webhook E2E tests against the current cluster (deploy first)
+	go test -tags e2e -mod vendor -count=1 -v ./test/e2e/...
 
 ##@ Development Targets
 
@@ -202,6 +229,16 @@ docker-push: ## Push spyre webhook validator image image for the build host arch
 docker-build-push: docker-build docker-push ## Build and push the spyre webhook validator image for the build host
 
 ##@ Deployment
+
+.PHONY: install-crd
+install-crd: $(CONTROLLER_GEN) ## Generate spyre-operator CRDs into $(CRD_OUTPUT_DIR)
+	mkdir -p $(CRD_OUTPUT_DIR)
+	go mod download github.com/ibm-aiu/spyre-operator
+	$(call fetch-external-crds,github.com/ibm-aiu/spyre-operator,api/v1alpha1)
+
+.PHONY: deploy-crd
+deploy-crd: install-crd ## Apply the generated spyre-operator CRDs to the cluster
+	$(KUBECTL) apply -f $(CRD_OUTPUT_DIR)
 
 .PHONY: deploy
 deploy: ## Deploy webhook

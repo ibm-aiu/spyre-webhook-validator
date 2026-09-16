@@ -4,3 +4,4 @@ bin/*
 vendor
 coverage-report.out
 coverage-report.html
+test/manifest/crd

@@ -1,0 +1,18 @@
+# Copyright (c) 2025, 2026 IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+# ResourceClaim requesting the spyre-pf DeviceClass in spyre-apps.
+# Expected: DENIED under VF mode ON, ALLOWED under VF mode OFF.
+# apiVersion must match the DRA version served by the cluster
+# (`oc api-resources | grep resourceclaims`).
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaim
+metadata:
+  name: test-claim-pf
+  namespace: spyre-apps
+spec:
+  devices:
+    requests:
+    - name: req0
+      exactly:
+        deviceClassName: spyre-pf
