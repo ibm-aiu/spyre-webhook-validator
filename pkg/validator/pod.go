@@ -47,6 +47,10 @@ func (v *PodValidator) ValidatePod(spec corev1.PodSpec) error {
 		return err
 	}
 
+	if v.draDriverEnabled {
+		return nil
+	}
+
 	allContainers := make([]corev1.Container, len(spec.Containers)+len(spec.InitContainers))
 	copy(allContainers, spec.Containers)
 	copy(allContainers[len(spec.Containers):], spec.InitContainers)

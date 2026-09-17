@@ -48,10 +48,19 @@ func resourceList(name corev1.ResourceName, quantity resource.Quantity) corev1.R
 }
 
 func newPodValidator(state spyrev1alpha1.State, schedulerEnabled bool) *validator.PodValidator {
+	return newPodValidatorWithDraDriver(schedulerEnabled, false)
+}
+
+func newPodValidatorWithDraDriver(schedulerEnabled, draDriverEnabled bool) *validator.PodValidator {
 	if schedulerEnabled {
 		GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
 	} else {
 		GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "")
+	}
+	if draDriverEnabled {
+		GinkgoT().Setenv("DRA_DRIVER_ENABLED", "1")
+	} else {
+		GinkgoT().Setenv("DRA_DRIVER_ENABLED", "")
 	}
 	return validator.NewPodValidator(validator.NewClusterPolicyHandler())
 }
@@ -185,6 +194,61 @@ var _ = Describe("Pod", func() {
 				Entry("odd spyre_tier2 request", resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("3")), nil, true),
 				Entry("odd spyre_tier2 limit", nil, resourceList("ibm.com/spyre_pf_tier0", resource.MustParse("3")), true),
 			)
+		})
+
+		Context("draDriver enabled", func() {
+
+			It("allows Pod with two specific spyre_pf resources", func() {
+				v := newPodValidatorWithDraDriver(false, true)
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf_0000_1a_00.0": oneQuant,
+								"ibm.com/spyre_pf_0000_3d_00.0": oneQuant},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).To(BeNil())
+			})
+
+			It("allows Pod with an odd tier resource amount", func() {
+				v := newPodValidatorWithDraDriver(false, true)
+				pSpec := corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf_tier0": resource.MustParse("3"),
+							},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).To(BeNil())
+			})
+
+			It("still enforces the scheduler check", func() {
+				v := newPodValidatorWithDraDriver(true, true)
+				pSpec := corev1.PodSpec{
+					SchedulerName: "not-a-spyre-scheduler",
+					Containers: []corev1.Container{{
+						Name:  "c1",
+						Image: "i",
+						Resources: corev1.ResourceRequirements{
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								"ibm.com/spyre_pf": oneQuant,
+							},
+						},
+					}},
+				}
+				err := v.ValidatePod(pSpec)
+				Expect(err).Should(Equal(validator.ErrNoSpyreScheduler))
+			})
 		})
 
 		Context("init container bypass", func() {

@@ -102,6 +102,33 @@ var _ = Describe("SpyreClusterPolicy", func() {
 		Entry("invalid validator (disabled)", validConfig, validConfig, validConfig, invalidConfig, false, false, false, ""),
 	)
 
+	Context("draDriver vs externalDeviceReservation", func() {
+		It("denies draDriver=true with externalDeviceReservation mode enabled", func() {
+			v := validator.NewClusterPolicyHandler()
+			clusterPolicy := genValidClusterPolicy()
+			clusterPolicy.Spec.DevicePlugin.DRADriver = true
+			err := v.ValidateClusterPolicy(clusterPolicy)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("externalDeviceReservation"))
+		})
+
+		It("allows draDriver=true without externalDeviceReservation mode", func() {
+			v := validator.NewClusterPolicyHandler()
+			clusterPolicy := genValidClusterPolicy()
+			clusterPolicy.Spec.DevicePlugin.DRADriver = true
+			clusterPolicy.Spec.ExperimentalMode = nil
+			err := v.ValidateClusterPolicy(clusterPolicy)
+			Expect(err).To(BeNil())
+		})
+
+		It("allows externalDeviceReservation mode without draDriver", func() {
+			v := validator.NewClusterPolicyHandler()
+			clusterPolicy := genValidClusterPolicy()
+			err := v.ValidateClusterPolicy(clusterPolicy)
+			Expect(err).To(BeNil())
+		})
+	})
+
 	Context("single policy", func() {
 		It("validate name", func() {
 			GinkgoT().Setenv("EXTERNAL_DEVICE_RESERVATION_MODE", "1")
