@@ -44,7 +44,7 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 	if err := v.validateSinglePolicy(clusterPolicy); err != nil {
 		return fmt.Errorf("failed to validate cluster: %w", err)
 	}
-	if err := validateDevicePlugin(clusterPolicy.Spec.DevicePlugin); err != nil {
+	if err := validateDevicePlugin(clusterPolicy.Spec.DevicePlugin, clusterPolicy.Spec.ExperimentalMode); err != nil {
 		return fmt.Errorf("failed to validate device plugin: %w", err)
 	}
 	schedulerEnabled := isSchedulerEnabled(clusterPolicy.Spec.ExperimentalMode)
@@ -70,11 +70,35 @@ func (v *ClusterPolicyHandler) validateSinglePolicy(clusterPolicy spyrev1alpha1.
 	return nil
 }
 
-func validateDevicePlugin(devicePlugin spyrev1alpha1.DevicePluginSpec) error {
+func validateDevicePlugin(devicePlugin spyrev1alpha1.DevicePluginSpec, modes []spyrev1alpha1.SpyreClusterPolicyExperimentalMode) error {
 	err := validateDeployConfig(devicePlugin.DeploymentConfig)
 	if err != nil {
 		return WrapConfigErr(err)
 	}
+
+	if devicePlugin.InitContainer != nil {
+		err := validateDeployConfig(devicePlugin.InitContainer.DeploymentConfig)
+		if err != nil {
+			return WrapConfigErr(fmt.Errorf("init container: %w", err))
+		}
+
+		runtime := devicePlugin.InitContainer.Runtime
+		pseudoMode := isPseudoModeEnabled(modes)
+
+		// In non-pseudo mode, runtime is required
+		if !pseudoMode && runtime == nil {
+			return WrapConfigErr(errors.New("runtime config is missing"))
+		}
+
+		// Validate runtime if provided (required in non-pseudo, optional in pseudo)
+		if runtime != nil {
+			err = validateDeployConfig(*runtime)
+			if err != nil {
+				return WrapConfigErr(fmt.Errorf("runtime container: %w", err))
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -91,6 +115,15 @@ func validateScheduler(scheduler spyrev1alpha1.SchedulerSpec, schedulerEnabled b
 func isSchedulerEnabled(modes []spyrev1alpha1.SpyreClusterPolicyExperimentalMode) bool {
 	for _, m := range modes {
 		if m == spyrev1alpha1.ReservationMode {
+			return true
+		}
+	}
+	return false
+}
+
+func isPseudoModeEnabled(modes []spyrev1alpha1.SpyreClusterPolicyExperimentalMode) bool {
+	for _, m := range modes {
+		if m == spyrev1alpha1.PseudoDeviceMode {
 			return true
 		}
 	}

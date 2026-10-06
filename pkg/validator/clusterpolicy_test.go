@@ -26,6 +26,25 @@ var (
 	invalidConfig = spyrev1alpha1.DeploymentConfig{Image: ""}
 )
 
+var (
+	validInitContainer = &spyrev1alpha1.ExternalInitContainerSpec{
+		DeploymentConfig: spyrev1alpha1.DeploymentConfig{Image: "init-data-image"},
+		Runtime:          &spyrev1alpha1.DeploymentConfig{Image: "init-senlib-image"},
+	}
+	initContainerMissingImage = &spyrev1alpha1.ExternalInitContainerSpec{
+		DeploymentConfig: spyrev1alpha1.DeploymentConfig{Image: ""},
+		Runtime:          &spyrev1alpha1.DeploymentConfig{Image: "init-senlib-image"},
+	}
+	initContainerMissingRuntimeImage = &spyrev1alpha1.ExternalInitContainerSpec{
+		DeploymentConfig: spyrev1alpha1.DeploymentConfig{Image: "init-data-image"},
+		Runtime:          &spyrev1alpha1.DeploymentConfig{Image: ""},
+	}
+	initContainerMissingRuntime = &spyrev1alpha1.ExternalInitContainerSpec{
+		DeploymentConfig: spyrev1alpha1.DeploymentConfig{Image: "init-data-image"},
+		Runtime:          nil,
+	}
+)
+
 func genValidClusterPolicy() spyrev1alpha1.SpyreClusterPolicy {
 	clusterPolicy := spyrev1alpha1.SpyreClusterPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -127,6 +146,86 @@ var _ = Describe("SpyreClusterPolicy", func() {
 			err := v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).To(BeNil())
 		})
+	})
+
+	Context("init container validation", func() {
+		DescribeTable("validate init container",
+			func(initContainer *spyrev1alpha1.ExternalInitContainerSpec,
+				modes []spyrev1alpha1.SpyreClusterPolicyExperimentalMode,
+				expectedErrSubstring string) {
+				clusterPolicy := spyrev1alpha1.SpyreClusterPolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: validator.ValidClusterPolicyName,
+					},
+					Spec: spyrev1alpha1.SpyreClusterPolicySpec{
+						DevicePlugin: spyrev1alpha1.DevicePluginSpec{
+							DeploymentConfig: validConfig,
+							InitContainer:    initContainer,
+						},
+						Scheduler: spyrev1alpha1.SchedulerSpec{
+							DeploymentConfig: validConfig,
+						},
+						MetricsExporter: spyrev1alpha1.MetricsExporterSpec{
+							DeploymentConfig: validConfig,
+						},
+						PodValidator: spyrev1alpha1.PodValidatorSpec{
+							DeploymentConfig: validConfig,
+						},
+						ExperimentalMode: modes,
+					},
+				}
+				v := validator.NewClusterPolicyHandler()
+				err := v.ValidateClusterPolicy(clusterPolicy)
+				if expectedErrSubstring != "" {
+					Expect(err.Error()).To(ContainSubstring(expectedErrSubstring))
+				} else {
+					Expect(err).To(BeNil())
+				}
+			},
+			// Non-pseudo mode: both init container and runtime required
+			Entry("non-pseudo: valid init container with runtime",
+				validInitContainer,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.ReservationMode},
+				""),
+			Entry("non-pseudo: init container missing init-data image",
+				initContainerMissingImage,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.ReservationMode},
+				"init container: image not specified"),
+			Entry("non-pseudo: init container missing runtime image",
+				initContainerMissingRuntimeImage,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.ReservationMode},
+				"runtime container: image not specified"),
+			Entry("non-pseudo: init container missing runtime config (required)",
+				initContainerMissingRuntime,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.ReservationMode},
+				"runtime config is missing"),
+			// Pseudo mode: init container required, runtime optional
+			Entry("pseudo: valid init container with runtime",
+				validInitContainer,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.PseudoDeviceMode, spyrev1alpha1.ReservationMode},
+				""),
+			Entry("pseudo: init container missing init-data image (required)",
+				initContainerMissingImage,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.PseudoDeviceMode, spyrev1alpha1.ReservationMode},
+				"init container: image not specified"),
+			Entry("pseudo: init container missing runtime image (runtime provided but empty)",
+				initContainerMissingRuntimeImage,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.PseudoDeviceMode, spyrev1alpha1.ReservationMode},
+				"runtime container: image not specified"),
+			Entry("pseudo: init container missing runtime config (optional)",
+				initContainerMissingRuntime,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.PseudoDeviceMode, spyrev1alpha1.ReservationMode},
+				""),
+			// Common tests
+			Entry("no init container (should pass)",
+				nil,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{spyrev1alpha1.ReservationMode},
+				""),
+			Entry("no experimental mode with valid init container",
+				validInitContainer,
+				[]spyrev1alpha1.SpyreClusterPolicyExperimentalMode{},
+				""),
+		)
 	})
 
 	Context("single policy", func() {
