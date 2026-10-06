@@ -22,11 +22,13 @@ const (
 
 type ClusterPolicyHandler struct {
 	schedulerEnabled bool
+	draDriverEnabled bool
 }
 
 func NewClusterPolicyHandler() *ClusterPolicyHandler {
 	return &ClusterPolicyHandler{
 		schedulerEnabled: os.Getenv("EXTERNAL_DEVICE_RESERVATION_MODE") == "1",
+		draDriverEnabled: os.Getenv("DRA_DRIVER_ENABLED") == "1",
 	}
 }
 
@@ -46,6 +48,9 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 		return fmt.Errorf("failed to validate device plugin: %w", err)
 	}
 	schedulerEnabled := isSchedulerEnabled(clusterPolicy.Spec.ExperimentalMode)
+	if clusterPolicy.Spec.DevicePlugin.DRADriver && schedulerEnabled {
+		return fmt.Errorf("failed to validate experimental mode: %w", ErrDraDriverWithExternalReservation)
+	}
 	if err := validateScheduler(clusterPolicy.Spec.Scheduler, schedulerEnabled); err != nil {
 		return fmt.Errorf("failed to validate scheduler: %w", err)
 	}
