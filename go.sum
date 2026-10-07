@@ -55,8 +55,8 @@ github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 h1:EwtI+Al+DeppwYX2oX
 github.com/google/pprof v0.0.0-20260402051712-545e8a4df936/go.mod h1:MxpfABSjhmINe3F1It9d+8exIHFvUqtLIRCdOGNXqiI=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/ibm-aiu/spyre-operator v1.3.1-0.20260901052808-c92c2025e9d6 h1:r0UzH+/AgAUQzLfrVZ1umqRjJNK3DeWC3mTB4AuPSHg=
-github.com/ibm-aiu/spyre-operator v1.3.1-0.20260901052808-c92c2025e9d6/go.mod h1:YMl+MQUYIIUu3FcK/3XxZBaopICC+NOn9Z3zTvvSGE0=
+github.com/ibm-aiu/spyre-operator v1.4.0 h1:1oMoKw34kBI/ApSfJVIQ1yplUSYjP28GNDL5neYuKqY=
+github.com/ibm-aiu/spyre-operator v1.4.0/go.mod h1:YEwqNEYqdHNedORt15POY9n/khwTyoSp2Gh5VJdIFbw=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
 github.com/joshdk/go-junit v1.0.0 h1:S86cUKIdwBHWwA6xCmFlf3RTLfVXYQfvanM5Uh+K6GE=
