@@ -32,10 +32,31 @@ func NewClusterPolicyHandler() *ClusterPolicyHandler {
 	}
 }
 
+// legacyDevicePlugin captures the deprecated devicePlugin.draDriver boolean,
+// which is no longer part of spyrev1alpha1.DevicePluginSpec.
+type legacyDevicePlugin struct {
+	Spec struct {
+		DevicePlugin struct {
+			DRADriver *bool `json:"draDriver"`
+		} `json:"devicePlugin"`
+	} `json:"spec"`
+}
+
 func (v *ClusterPolicyHandler) Validate(raw []byte) error {
 	var clusterPolicy spyrev1alpha1.SpyreClusterPolicy
 	if err := json.Unmarshal(raw, &clusterPolicy); err != nil {
 		return err
+	}
+	// Backward compatibility: devicePlugin.mode takes precedence; fall back to
+	// the legacy devicePlugin.draDriver boolean only when mode is not set.
+	if clusterPolicy.Spec.DevicePlugin.Mode == "" {
+		var legacy legacyDevicePlugin
+		if err := json.Unmarshal(raw, &legacy); err != nil {
+			return err
+		}
+		if d := legacy.Spec.DevicePlugin.DRADriver; d != nil && *d {
+			clusterPolicy.Spec.DevicePlugin.Mode = spyrev1alpha1.DevicePluginModeDRA
+		}
 	}
 	return v.validate(clusterPolicy)
 }
@@ -48,7 +69,7 @@ func (v *ClusterPolicyHandler) validate(clusterPolicy spyrev1alpha1.SpyreCluster
 		return fmt.Errorf("failed to validate device plugin: %w", err)
 	}
 	schedulerEnabled := isSchedulerEnabled(clusterPolicy.Spec.ExperimentalMode)
-	if clusterPolicy.Spec.DevicePlugin.DRADriver && schedulerEnabled {
+	if clusterPolicy.Spec.DevicePlugin.Mode == spyrev1alpha1.DevicePluginModeDRA && schedulerEnabled {
 		return fmt.Errorf("failed to validate experimental mode: %w", ErrDraDriverWithExternalReservation)
 	}
 	if err := validateScheduler(clusterPolicy.Spec.Scheduler, schedulerEnabled); err != nil {

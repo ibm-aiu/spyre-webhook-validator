@@ -122,19 +122,19 @@ var _ = Describe("SpyreClusterPolicy", func() {
 	)
 
 	Context("draDriver vs externalDeviceReservation", func() {
-		It("denies draDriver=true with externalDeviceReservation mode enabled", func() {
+		It("denies mode=dra with externalDeviceReservation mode enabled", func() {
 			v := validator.NewClusterPolicyHandler()
 			clusterPolicy := genValidClusterPolicy()
-			clusterPolicy.Spec.DevicePlugin.DRADriver = true
+			clusterPolicy.Spec.DevicePlugin.Mode = spyrev1alpha1.DevicePluginModeDRA
 			err := v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("externalDeviceReservation"))
 		})
 
-		It("allows draDriver=true without externalDeviceReservation mode", func() {
+		It("allows mode=dra without externalDeviceReservation mode", func() {
 			v := validator.NewClusterPolicyHandler()
 			clusterPolicy := genValidClusterPolicy()
-			clusterPolicy.Spec.DevicePlugin.DRADriver = true
+			clusterPolicy.Spec.DevicePlugin.Mode = spyrev1alpha1.DevicePluginModeDRA
 			clusterPolicy.Spec.ExperimentalMode = nil
 			err := v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).To(BeNil())
@@ -145,6 +145,34 @@ var _ = Describe("SpyreClusterPolicy", func() {
 			clusterPolicy := genValidClusterPolicy()
 			err := v.ValidateClusterPolicy(clusterPolicy)
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("legacy draDriver compatibility (raw JSON)", func() {
+		rawPolicy := func(devicePluginExtra string) []byte {
+			return []byte(`{"metadata":{"name":"spyreclusterpolicy"},"spec":{` +
+				`"devicePlugin":{"image":"img"` + devicePluginExtra + `},` +
+				`"scheduler":{"image":"img"},"metricsExporter":{"image":"img"},"podValidator":{"image":"img"},` +
+				`"experimentalMode":["externalDeviceReservation"]}}`)
+		}
+
+		It("converts legacy draDriver=true and denies with externalDeviceReservation", func() {
+			err := validator.NewClusterPolicyHandler().Validate(rawPolicy(`,"draDriver":true`))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("externalDeviceReservation"))
+		})
+
+		It("allows legacy draDriver=false with externalDeviceReservation", func() {
+			Expect(validator.NewClusterPolicyHandler().Validate(rawPolicy(`,"draDriver":false`))).To(Succeed())
+		})
+
+		It("denies mode=dra with externalDeviceReservation", func() {
+			err := validator.NewClusterPolicyHandler().Validate(rawPolicy(`,"mode":"dra"`))
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("mode takes precedence over legacy draDriver", func() {
+			Expect(validator.NewClusterPolicyHandler().Validate(rawPolicy(`,"mode":"classic","draDriver":true`))).To(Succeed())
 		})
 	})
 
